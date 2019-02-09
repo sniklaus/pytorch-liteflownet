@@ -23,7 +23,7 @@ To run it on your own pair of images, use the following command. You can choose 
 python run.py --model default --first ./images/first.png --second ./images/second.png --out ./out.flo
 ```
 
-I am afraid that I cannot guarantee that this reimplementation is correct. However, it produced results almost identical to the implementation of the original authors in the examples that I tried. The numerical deviations stem from differences in the `DownsampleLayer` of Caffe and the `torch.nn.functional.interpolate` function of PyTorch. Please feel free to contribute to this repository by submitting issues and pull requests.
+I am afraid that I cannot guarantee that this reimplementation is correct. However, it produced results pretty much identical to the implementation of the original authors in the examples that I tried. There are some numerical deviations that stem from differences in the `DownsampleLayer` of Caffe and the `torch.nn.functional.interpolate` function of PyTorch. Please feel free to contribute to this repository by submitting issues and pull requests.
 
 ## comparison
 <p align="center"><img src="comparison/comparison.gif?raw=true" alt="Comparison"></p>
