@@ -39,7 +39,9 @@ As stated in the <a href="https://github.com/twhui/LiteFlowNet#license-and-citat
          booktitle = {IEEE Conference on Computer Vision and Pattern Recognition},
          year = {2018}
      }
+```
 
+```
 [2]  @misc{pytorch-liteflownet,
          author = {Simon Niklaus},
          title = {A Reimplementation of {LiteFlowNet} Using {PyTorch}},
