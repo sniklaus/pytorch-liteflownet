@@ -217,7 +217,7 @@ class Network(torch.nn.Module):
 				tensorFeaturesSecond = self.moduleFeat(tensorFeaturesSecond)
 
 				if tensorFlow is not None:
-					tensorFeaturesSecond = Backward(tensorInput=tensorFeaturesSecond, tensorFlow=tensorFlow * self.dblBackward)
+					tensorFeaturesSecond = backwarp(tensorInput=tensorFeaturesSecond, tensorFlow=tensorFlow * self.dblBackward)
 				# end
 
 				return (tensorFlow if tensorFlow is not None else 0.0) + self.moduleMain(torch.cat([ tensorFeaturesFirst, tensorFeaturesSecond, tensorFlow ], 1))
@@ -276,7 +276,7 @@ class Network(torch.nn.Module):
 			# eny
 
 			def forward(self, tensorFirst, tensorSecond, tensorFeaturesFirst, tensorFeaturesSecond, tensorFlow):
-				tensorDifference = (tensorFirst - Backward(tensorInput=tensorSecond, tensorFlow=tensorFlow * self.dblBackward)).pow(2.0).sum(1, True).sqrt().detach()
+				tensorDifference = (tensorFirst - backwarp(tensorInput=tensorSecond, tensorFlow=tensorFlow * self.dblBackward)).pow(2.0).sum(1, True).sqrt().detach()
 
 				tensorDist = self.moduleDist(self.moduleMain(torch.cat([ tensorDifference, tensorFlow - tensorFlow.view(tensorFlow.shape[0], 2, -1).mean(2, True).view(tensorFlow.shape[0], 2, 1, 1), self.moduleFeat(tensorFeaturesFirst) ], 1)))
 				tensorDist = tensorDist.pow(2.0).neg()
