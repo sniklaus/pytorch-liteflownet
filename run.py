@@ -11,7 +11,7 @@ import PIL.Image
 import sys
 
 try:
-	from correlation import correlation # the custom cost volume layer
+	from .correlation import correlation # the custom cost volume layer
 except:
 	sys.path.insert(0, './correlation'); import correlation # you should consider upgrading python
 # end
@@ -40,19 +40,19 @@ for strOption, strArgument in getopt.getopt(sys.argv[1:], '', [ strParameter[2:]
 
 ##########################################################
 
-Backward_tensorGrid = {}
+backwarp_tensorGrid = {}
 
-def Backward(tensorInput, tensorFlow):
-	if str(tensorFlow.size()) not in Backward_tensorGrid:
-		tensorHorizontal = torch.linspace(-1.0, 1.0, tensorFlow.size(3)).view(1, 1, 1, tensorFlow.size(3)).expand(tensorFlow.size(0), -1, tensorFlow.size(2), -1)
-		tensorVertical = torch.linspace(-1.0, 1.0, tensorFlow.size(2)).view(1, 1, tensorFlow.size(2), 1).expand(tensorFlow.size(0), -1, -1, tensorFlow.size(3))
+def backwarp(tensorInput, tensorFlow):
+	if str(tensorFlow.size()) not in backwarp_tensorGrid:
+		tensorHorizontal = torch.linspace(-1.0, 1.0, tensorFlow.shape[3]).view(1, 1, 1, tensorFlow.shape[3]).expand(tensorFlow.shape[0], -1, tensorFlow.shape[2], -1)
+		tensorVertical = torch.linspace(-1.0, 1.0, tensorFlow.shape[2]).view(1, 1, tensorFlow.shape[2], 1).expand(tensorFlow.shape[0], -1, -1, tensorFlow.shape[3])
 
-		Backward_tensorGrid[str(tensorFlow.size())] = torch.cat([ tensorHorizontal, tensorVertical ], 1).cuda()
+		backwarp_tensorGrid[str(tensorFlow.size())] = torch.cat([ tensorHorizontal, tensorVertical ], 1).cuda()
 	# end
 
-	tensorFlow = torch.cat([ tensorFlow[:, 0:1, :, :] / ((tensorInput.size(3) - 1.0) / 2.0), tensorFlow[:, 1:2, :, :] / ((tensorInput.size(2) - 1.0) / 2.0) ], 1)
+	tensorFlow = torch.cat([ tensorFlow[:, 0:1, :, :] / ((tensorInput.shape[3] - 1.0) / 2.0), tensorFlow[:, 1:2, :, :] / ((tensorInput.shape[2] - 1.0) / 2.0) ], 1)
 
-	return torch.nn.functional.grid_sample(input=tensorInput, grid=(Backward_tensorGrid[str(tensorFlow.size())] + tensorFlow).permute(0, 2, 3, 1), mode='bilinear', padding_mode='zeros', align_corners=True)
+	return torch.nn.functional.grid_sample(input=tensorInput, grid=(backwarp_tensorGrid[str(tensorFlow.size())] + tensorFlow).permute(0, 2, 3, 1), mode='bilinear', padding_mode='zeros', align_corners=True)
 # end
 
 ##########################################################
@@ -120,7 +120,7 @@ class Network(torch.nn.Module):
 			def __init__(self, intLevel):
 				super(Matching, self).__init__()
 
-				self.dblBackward = [ 0.0, 0.0, 10.0, 5.0, 2.5, 1.25, 0.625 ][intLevel]
+				self.dblBackwarp = [ 0.0, 0.0, 10.0, 5.0, 2.5, 1.25, 0.625 ][intLevel]
 
 				if intLevel != 2:
 					self.moduleFeat = torch.nn.Sequential()
@@ -169,7 +169,7 @@ class Network(torch.nn.Module):
 				# end
 
 				if tensorFlow is not None:
-					tensorFeaturesSecond = Backward(tensorInput=tensorFeaturesSecond, tensorFlow=tensorFlow * self.dblBackward)
+					tensorFeaturesSecond = backwarp(tensorInput=tensorFeaturesSecond, tensorFlow=tensorFlow * self.dblBackwarp)
 				# end
 
 				if self.moduleUpcorr is None:
@@ -278,7 +278,7 @@ class Network(torch.nn.Module):
 			def forward(self, tensorFirst, tensorSecond, tensorFeaturesFirst, tensorFeaturesSecond, tensorFlow):
 				tensorDifference = (tensorFirst - Backward(tensorInput=tensorSecond, tensorFlow=tensorFlow * self.dblBackward)).pow(2.0).sum(1, True).sqrt().detach()
 
-				tensorDist = self.moduleDist(self.moduleMain(torch.cat([ tensorDifference, tensorFlow - tensorFlow.view(tensorFlow.size(0), 2, -1).mean(2, True).view(tensorFlow.size(0), 2, 1, 1), self.moduleFeat(tensorFeaturesFirst) ], 1)))
+				tensorDist = self.moduleDist(self.moduleMain(torch.cat([ tensorDifference, tensorFlow - tensorFlow.view(tensorFlow.shape[0], 2, -1).mean(2, True).view(tensorFlow.shape[0], 2, 1, 1), self.moduleFeat(tensorFeaturesFirst) ], 1)))
 				tensorDist = tensorDist.pow(2.0).neg()
 				tensorDist = (tensorDist - tensorDist.max(1, True)[0]).exp()
 
@@ -296,7 +296,7 @@ class Network(torch.nn.Module):
 		self.moduleSubpixel = torch.nn.ModuleList([ Subpixel(intLevel) for intLevel in [ 2, 3, 4, 5, 6 ] ])
 		self.moduleRegularization = torch.nn.ModuleList([ Regularization(intLevel) for intLevel in [ 2, 3, 4, 5, 6 ] ])
 
-		self.load_state_dict(torch.load('./network-' + arguments_strModel + '.pytorch'))
+		self.load_state_dict(torch.load(__file__.replace('run.py', 'network-' + arguments_strModel + '.pytorch')))
 	# end
 
 	def forward(self, tensorFirst, tensorSecond):
@@ -315,8 +315,8 @@ class Network(torch.nn.Module):
 		tensorSecond = [ tensorSecond ]
 
 		for intLevel in [ 1, 2, 3, 4, 5 ]:
-			tensorFirst.append(torch.nn.functional.interpolate(input=tensorFirst[-1], size=(tensorFeaturesFirst[intLevel].size(2), tensorFeaturesFirst[intLevel].size(3)), mode='bilinear', align_corners=False))
-			tensorSecond.append(torch.nn.functional.interpolate(input=tensorSecond[-1], size=(tensorFeaturesSecond[intLevel].size(2), tensorFeaturesSecond[intLevel].size(3)), mode='bilinear', align_corners=False))
+			tensorFirst.append(torch.nn.functional.interpolate(input=tensorFirst[-1], size=(tensorFeaturesFirst[intLevel].shape[2], tensorFeaturesFirst[intLevel].shape[3]), mode='bilinear', align_corners=False))
+			tensorSecond.append(torch.nn.functional.interpolate(input=tensorSecond[-1], size=(tensorFeaturesSecond[intLevel].shape[2], tensorFeaturesSecond[intLevel].shape[3]), mode='bilinear', align_corners=False))
 		# end
 
 		tensorFlow = None
@@ -331,16 +331,22 @@ class Network(torch.nn.Module):
 	# end
 # end
 
-moduleNetwork = Network().cuda().eval()
+moduleNetwork = None
 
 ##########################################################
 
 def estimate(tensorFirst, tensorSecond):
-	assert(tensorFirst.size(1) == tensorSecond.size(1))
-	assert(tensorFirst.size(2) == tensorSecond.size(2))
+	global moduleNetwork
 
-	intWidth = tensorFirst.size(2)
-	intHeight = tensorFirst.size(1)
+	if moduleNetwork is None:
+		moduleNetwork = Network().cuda().eval()
+	# end
+
+	assert(tensorFirst.shape[1] == tensorSecond.shape[1])
+	assert(tensorFirst.shape[2] == tensorSecond.shape[2])
+
+	intWidth = tensorFirst.shape[2]
+	intHeight = tensorFirst.shape[1]
 
 	assert(intWidth == 1024) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
 	assert(intHeight == 436) # remember that there is no guarantee for correctness, comment this line out if you acknowledge this and want to continue
@@ -373,7 +379,7 @@ if __name__ == '__main__':
 	objectOutput = open(arguments_strOut, 'wb')
 
 	numpy.array([ 80, 73, 69, 72 ], numpy.uint8).tofile(objectOutput)
-	numpy.array([ tensorOutput.size(2), tensorOutput.size(1) ], numpy.int32).tofile(objectOutput)
+	numpy.array([ tensorOutput.shape[2], tensorOutput.shape[1] ], numpy.int32).tofile(objectOutput)
 	numpy.array(tensorOutput.numpy().transpose(1, 2, 0), numpy.float32).tofile(objectOutput)
 
 	objectOutput.close()

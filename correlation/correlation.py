@@ -4,10 +4,6 @@ import cupy
 import math
 import re
 
-class Stream:
-	ptr = torch.cuda.current_stream().cuda_stream
-# end
-
 kernel_Correlation_rearrange = '''
 	extern "C" __global__ void kernel_Correlation_rearrange(
 		const int n,
@@ -281,8 +277,8 @@ def cupy_launch(strFunction, strKernel):
 class _FunctionCorrelation(torch.autograd.Function):
 	@staticmethod
 	def forward(self, first, second, intStride):
-		rbot0 = first.new_zeros([ first.size(0), first.size(2) + (6 * intStride), first.size(3) + (6 * intStride), first.size(1) ])
-		rbot1 = first.new_zeros([ first.size(0), first.size(2) + (6 * intStride), first.size(3) + (6 * intStride), first.size(1) ])
+		rbot0 = first.new_zeros([ first.shape[0], first.shape[2] + (6 * intStride), first.shape[3] + (6 * intStride), first.shape[1] ])
+		rbot1 = first.new_zeros([ first.shape[0], first.shape[2] + (6 * intStride), first.shape[3] + (6 * intStride), first.shape[1] ])
 
 		self.save_for_backward(first, second, rbot0, rbot1)
 
@@ -291,45 +287,42 @@ class _FunctionCorrelation(torch.autograd.Function):
 		assert(first.is_contiguous() == True)
 		assert(second.is_contiguous() == True)
 
-		output = first.new_zeros([ first.size(0), 49, int(math.ceil(first.size(2) / intStride)), int(math.ceil(first.size(3) / intStride)) ])
+		output = first.new_zeros([ first.shape[0], 49, int(math.ceil(first.shape[2] / intStride)), int(math.ceil(first.shape[3] / intStride)) ])
 
 		if first.is_cuda == True:
-			n = first.size(2) * first.size(3)
+			n = first.shape[2] * first.shape[3]
 			cupy_launch('kernel_Correlation_rearrange', cupy_kernel('kernel_Correlation_rearrange', {
 				'intStride': self.intStride,
 				'input': first,
 				'output': rbot0
 			}))(
-				grid=tuple([ int((n + 16 - 1) / 16), first.size(1), first.size(0) ]),
+				grid=tuple([ int((n + 16 - 1) / 16), first.shape[1], first.shape[0] ]),
 				block=tuple([ 16, 1, 1 ]),
-				args=[ n, first.data_ptr(), rbot0.data_ptr() ],
-				stream=Stream
+				args=[ n, first.data_ptr(), rbot0.data_ptr() ]
 			)
 
-			n = second.size(2) * second.size(3)
+			n = second.shape[2] * second.shape[3]
 			cupy_launch('kernel_Correlation_rearrange', cupy_kernel('kernel_Correlation_rearrange', {
 				'intStride': self.intStride,
 				'input': second,
 				'output': rbot1
 			}))(
-				grid=tuple([ int((n + 16 - 1) / 16), second.size(1), second.size(0) ]),
+				grid=tuple([ int((n + 16 - 1) / 16), second.shape[1], second.shape[0] ]),
 				block=tuple([ 16, 1, 1 ]),
-				args=[ n, second.data_ptr(), rbot1.data_ptr() ],
-				stream=Stream
+				args=[ n, second.data_ptr(), rbot1.data_ptr() ]
 			)
 
-			n = output.size(1) * output.size(2) * output.size(3)
+			n = output.shape[1] * output.shape[2] * output.shape[3]
 			cupy_launch('kernel_Correlation_updateOutput', cupy_kernel('kernel_Correlation_updateOutput', {
 				'intStride': self.intStride,
 				'rbot0': rbot0,
 				'rbot1': rbot1,
 				'top': output
 			}))(
-				grid=tuple([ output.size(3), output.size(2), output.size(0) ]),
+				grid=tuple([ output.shape[3], output.shape[2], output.shape[0] ]),
 				block=tuple([ 32, 1, 1 ]),
-				shared_mem=first.size(1) * 4,
-				args=[ n, rbot0.data_ptr(), rbot1.data_ptr(), output.data_ptr() ],
-				stream=Stream
+				shared_mem=first.shape[1] * 4,
+				args=[ n, rbot0.data_ptr(), rbot1.data_ptr(), output.data_ptr() ]
 			)
 
 		elif first.is_cuda == False:
@@ -346,13 +339,13 @@ class _FunctionCorrelation(torch.autograd.Function):
 
 		assert(gradOutput.is_contiguous() == True)
 
-		gradFirst = first.new_zeros([ first.size(0), first.size(1), first.size(2), first.size(3) ]) if self.needs_input_grad[0] == True else None
-		gradSecond = first.new_zeros([ first.size(0), first.size(1), first.size(2), first.size(3) ]) if self.needs_input_grad[1] == True else None
+		gradFirst = first.new_zeros([ first.shape[0], first.shape[1], first.shape[2], first.shape[3] ]) if self.needs_input_grad[0] == True else None
+		gradSecond = first.new_zeros([ first.shape[0], first.shape[1], first.shape[2], first.shape[3] ]) if self.needs_input_grad[1] == True else None
 
 		if first.is_cuda == True:
 			if gradFirst is not None:
-				for intSample in range(first.size(0)):
-					n = first.size(1) * first.size(2) * first.size(3)
+				for intSample in range(first.shape[0]):
+					n = first.shape[1] * first.shape[2] * first.shape[3]
 					cupy_launch('kernel_Correlation_updateGradFirst', cupy_kernel('kernel_Correlation_updateGradFirst', {
 						'intStride': self.intStride,
 						'rbot0': rbot0,
@@ -370,8 +363,8 @@ class _FunctionCorrelation(torch.autograd.Function):
 			# end
 
 			if gradSecond is not None:
-				for intSample in range(first.size(0)):
-					n = first.size(1) * first.size(2) * first.size(3)
+				for intSample in range(first.shape[0]):
+					n = first.shape[1] * first.shape[2] * first.shape[3]
 					cupy_launch('kernel_Correlation_updateGradSecond', cupy_kernel('kernel_Correlation_updateGradSecond', {
 						'intStride': self.intStride,
 						'rbot0': rbot0,
