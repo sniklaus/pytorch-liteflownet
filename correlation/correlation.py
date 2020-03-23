@@ -21,7 +21,7 @@ kernel_Correlation_rearrange = '''
 	  int intSample = blockIdx.z;
 	  int intChannel = blockIdx.y;
 
-	  float dblValue = input[(((intSample * SIZE_1(input)) + intChannel) * SIZE_2(input) * SIZE_3(input)) + intIndex];
+	  float fltValue = input[(((intSample * SIZE_1(input)) + intChannel) * SIZE_2(input) * SIZE_3(input)) + intIndex];
 
 	  __syncthreads();
 
@@ -29,7 +29,7 @@ kernel_Correlation_rearrange = '''
 	  int intPaddedX = (intIndex % SIZE_3(input)) + 3*{{intStride}};
 	  int intRearrange = ((SIZE_3(input) + 6*{{intStride}}) * intPaddedY) + intPaddedX;
 
-	  output[(((intSample * SIZE_1(output) * SIZE_2(output)) + intRearrange) * SIZE_1(input)) + intChannel] = dblValue;
+	  output[(((intSample * SIZE_1(output) * SIZE_2(output)) + intRearrange) * SIZE_1(input)) + intChannel] = fltValue;
 	}
 '''
 
@@ -233,39 +233,39 @@ kernel_Correlation_updateGradSecond = '''
 	} }
 '''
 
-def cupy_kernel(strFunction, objectVariables):
-	strKernel = globals()[strFunction].replace('{{intStride}}', str(objectVariables['intStride']))
+def cupy_kernel(strFunction, objVariables):
+	strKernel = globals()[strFunction].replace('{{intStride}}', str(objVariables['intStride']))
 
 	while True:
-		objectMatch = re.search('(SIZE_)([0-4])(\()([^\)]*)(\))', strKernel)
+		objMatch = re.search('(SIZE_)([0-4])(\()([^\)]*)(\))', strKernel)
 
-		if objectMatch is None:
+		if objMatch is None:
 			break
 		# end
 
-		intArg = int(objectMatch.group(2))
+		intArg = int(objMatch.group(2))
 
-		strTensor = objectMatch.group(4)
-		intSizes = objectVariables[strTensor].size()
+		strTensor = objMatch.group(4)
+		intSizes = objVariables[strTensor].size()
 
-		strKernel = strKernel.replace(objectMatch.group(), str(intSizes[intArg]))
+		strKernel = strKernel.replace(objMatch.group(), str(intSizes[intArg]))
 	# end
 
 	while True:
-		objectMatch = re.search('(VALUE_)([0-4])(\()([^\)]+)(\))', strKernel)
+		objMatch = re.search('(VALUE_)([0-4])(\()([^\)]+)(\))', strKernel)
 
-		if objectMatch is None:
+		if objMatch is None:
 			break
 		# end
 
-		intArgs = int(objectMatch.group(2))
-		strArgs = objectMatch.group(4).split(',')
+		intArgs = int(objMatch.group(2))
+		strArgs = objMatch.group(4).split(',')
 
 		strTensor = strArgs[0]
-		intStrides = objectVariables[strTensor].stride()
+		intStrides = objVariables[strTensor].stride()
 		strIndex = [ '((' + strArgs[intArg + 1].replace('{', '(').replace('}', ')').strip() + ')*' + str(intStrides[intArg]) + ')' for intArg in range(intArgs) ]
 
-		strKernel = strKernel.replace(objectMatch.group(0), strTensor + '[' + str.join('+', strIndex) + ']')
+		strKernel = strKernel.replace(objMatch.group(0), strTensor + '[' + str.join('+', strIndex) + ']')
 	# end
 
 	return strKernel
@@ -392,8 +392,8 @@ class _FunctionCorrelation(torch.autograd.Function):
 	# end
 # end
 
-def FunctionCorrelation(tensorFirst, tensorSecond, intStride):
-	return _FunctionCorrelation.apply(tensorFirst, tensorSecond, intStride)
+def FunctionCorrelation(tenFirst, tenSecond, intStride):
+	return _FunctionCorrelation.apply(tenFirst, tenSecond, intStride)
 # end
 
 class ModuleCorrelation(torch.nn.Module):
@@ -401,7 +401,7 @@ class ModuleCorrelation(torch.nn.Module):
 		super(ModuleCorrelation, self).__init__()
 	# end
 
-	def forward(self, tensorFirst, tensorSecond, intStride):
-		return _FunctionCorrelation.apply(tensorFirst, tensorSecond, intStride)
+	def forward(self, tenFirst, tenSecond, intStride):
+		return _FunctionCorrelation.apply(tenFirst, tenSecond, intStride)
 	# end
 # end
