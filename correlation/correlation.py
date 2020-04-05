@@ -358,8 +358,7 @@ class _FunctionCorrelation(torch.autograd.Function):
 					}))(
 						grid=tuple([ int((n + 512 - 1) / 512), 1, 1 ]),
 						block=tuple([ 512, 1, 1 ]),
-						args=[ n, intSample, rbot0.data_ptr(), rbot1.data_ptr(), gradOutput.data_ptr(), gradFirst.data_ptr(), None ],
-						stream=Stream
+						args=[ n, intSample, rbot0.data_ptr(), rbot1.data_ptr(), gradOutput.data_ptr(), gradFirst.data_ptr(), None ]
 					)
 				# end
 			# end
@@ -377,8 +376,7 @@ class _FunctionCorrelation(torch.autograd.Function):
 					}))(
 						grid=tuple([ int((n + 512 - 1) / 512), 1, 1 ]),
 						block=tuple([ 512, 1, 1 ]),
-						args=[ n, intSample, rbot0.data_ptr(), rbot1.data_ptr(), gradOutput.data_ptr(), None, gradSecond.data_ptr() ],
-						stream=Stream
+						args=[ n, intSample, rbot0.data_ptr(), rbot1.data_ptr(), gradOutput.data_ptr(), None, gradSecond.data_ptr() ]
 					)
 				# end
 			# end
