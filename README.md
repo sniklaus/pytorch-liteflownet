@@ -12,8 +12,6 @@ And another optical flow implementation from me: https://github.com/sniklaus/pyt
 Yet another optical flow implementation from me: https://github.com/sniklaus/pytorch-unflow
 
 ## setup
-To download the pre-trained models, run `bash download.bash`. These originate from the original authors, I just converted them to PyTorch.
-
 The correlation layer is implemented in CUDA using CuPy, which is why CuPy is a required dependency. It can be installed using `pip install cupy` or alternatively using one of the provided binary packages as outlined in the CuPy repository.
 
 ## usage
