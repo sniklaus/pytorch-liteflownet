@@ -276,10 +276,10 @@ class Network(torch.nn.Module):
 			# eny
 
 			def forward(self, tenFirst, tenSecond, tenFeaturesFirst, tenFeaturesSecond, tenFlow):
-				tenDifference = (tenFirst - backwarp(tenInput=tenSecond, tenFlow=tenFlow * self.fltBackward)).pow(2.0).sum(1, True).sqrt().detach()
+				tenDifference = (tenFirst - backwarp(tenInput=tenSecond, tenFlow=tenFlow * self.fltBackward)).square().sum(1, True).sqrt().detach()
 
 				tenDist = self.netDist(self.netMain(torch.cat([ tenDifference, tenFlow - tenFlow.view(tenFlow.shape[0], 2, -1).mean(2, True).view(tenFlow.shape[0], 2, 1, 1), self.netFeat(tenFeaturesFirst) ], 1)))
-				tenDist = tenDist.pow(2.0).neg()
+				tenDist = tenDist.square().neg()
 				tenDist = (tenDist - tenDist.max(1, True)[0]).exp()
 
 				tenDivisor = tenDist.sum(1, True).reciprocal()

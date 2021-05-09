@@ -5,11 +5,7 @@ This is a personal reimplementation of LiteFlowNet [1] using PyTorch. Should you
 
 For the original Caffe version of this work, please see: https://github.com/twhui/LiteFlowNet
 <br />
-Another optical flow implementation from me: https://github.com/sniklaus/pytorch-pwc
-<br />
-And another optical flow implementation from me: https://github.com/sniklaus/pytorch-spynet
-<br />
-Yet another optical flow implementation from me: https://github.com/sniklaus/pytorch-unflow
+Other optical flow implementations from me: [pytorch-pwc](https://github.com/sniklaus/pytorch-pwc), [pytorch-unflow](https://github.com/sniklaus/pytorch-unflow), [pytorch-spynet](https://github.com/sniklaus/pytorch-spynet)
 
 ## setup
 The correlation layer is implemented in CUDA using CuPy, which is why CuPy is a required dependency. It can be installed using `pip install cupy` or alternatively using one of the provided [binary packages](https://docs.cupy.dev/en/stable/install.html#installing-cupy) as outlined in the CuPy repository. If you would like to use Docker, you can take a look at [this](https://github.com/sniklaus/pytorch-liteflownet/pull/43) pull request to get started.
