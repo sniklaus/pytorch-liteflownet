@@ -286,8 +286,8 @@ class _FunctionCorrelation(torch.autograd.Function):
 
 		self.intStride = intStride
 
-        first = first.contiguous(); assert(first.is_cuda == True)
-        second = second.contiguous(); assert(second.is_cuda == True)
+		first = first.contiguous(); assert(first.is_cuda == True)
+		second = second.contiguous(); assert(second.is_cuda == True)
 
 		output = first.new_zeros([ first.shape[0], 49, int(math.ceil(first.shape[2] / intStride)), int(math.ceil(first.shape[3] / intStride)) ])
 
@@ -339,7 +339,7 @@ class _FunctionCorrelation(torch.autograd.Function):
 	def backward(self, gradOutput):
 		first, second, rbot0, rbot1 = self.saved_tensors
 
-        gradOutput = gradOutput.contiguous(); assert(gradOutput.is_cuda == True)
+		gradOutput = gradOutput.contiguous(); assert(gradOutput.is_cuda == True)
 
 		gradFirst = first.new_zeros([ first.shape[0], first.shape[1], first.shape[2], first.shape[3] ]) if self.needs_input_grad[0] == True else None
 		gradSecond = first.new_zeros([ first.shape[0], first.shape[1], first.shape[2], first.shape[3] ]) if self.needs_input_grad[1] == True else None
