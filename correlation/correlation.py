@@ -282,8 +282,6 @@ class _FunctionCorrelation(torch.autograd.Function):
 		rbot0 = one.new_zeros([ one.shape[0], one.shape[2] + (6 * intStride), one.shape[3] + (6 * intStride), one.shape[1] ])
 		rbot1 = one.new_zeros([ one.shape[0], one.shape[2] + (6 * intStride), one.shape[3] + (6 * intStride), one.shape[1] ])
 
-		self.save_for_backward(one, two, rbot0, rbot1)
-
 		self.intStride = intStride
 
 		one = one.contiguous(); assert(one.is_cuda == True)
@@ -331,6 +329,8 @@ class _FunctionCorrelation(torch.autograd.Function):
 			raise NotImplementedError()
 
 		# end
+
+		self.save_for_backward(one, two, rbot0, rbot1)
 
 		return output
 	# end
