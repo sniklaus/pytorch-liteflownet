@@ -274,13 +274,13 @@ class Network(torch.nn.Module):
             # eny
 
             def forward(self, tenOne, tenTwo, tenFeaturesOne, tenFeaturesTwo, tenFlow):
-                tenDifference = (tenOne - backwarp(tenInput=tenTwo, tenFlow=tenFlow * self.fltBackward)).square().sum(1, True).sqrt().detach()
+                tenDifference = (tenOne - backwarp(tenInput=tenTwo, tenFlow=tenFlow * self.fltBackward)).square().sum([1], True).sqrt().detach()
 
-                tenDist = self.netDist(self.netMain(torch.cat([ tenDifference, tenFlow - tenFlow.view(tenFlow.shape[0], 2, -1).mean(2, True).view(tenFlow.shape[0], 2, 1, 1), self.netFeat(tenFeaturesOne) ], 1)))
+                tenDist = self.netDist(self.netMain(torch.cat([ tenDifference, tenFlow - tenFlow.mean([2, 3], True), self.netFeat(tenFeaturesOne) ], 1)))
                 tenDist = tenDist.square().neg()
                 tenDist = (tenDist - tenDist.max(1, True)[0]).exp()
 
-                tenDivisor = tenDist.sum(1, True).reciprocal()
+                tenDivisor = tenDist.sum([1], True).reciprocal()
 
                 tenScaleX = self.netScaleX(tenDist * torch.nn.functional.unfold(input=tenFlow[:, 0:1, :, :], kernel_size=self.intUnfold, stride=1, padding=int((self.intUnfold - 1) / 2)).view_as(tenDist)) * tenDivisor
                 tenScaleY = self.netScaleY(tenDist * torch.nn.functional.unfold(input=tenFlow[:, 1:2, :, :], kernel_size=self.intUnfold, stride=1, padding=int((self.intUnfold - 1) / 2)).view_as(tenDist)) * tenDivisor
