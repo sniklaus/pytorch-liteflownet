@@ -22,16 +22,21 @@ torch.backends.cudnn.enabled = True # make sure to use cudnn for computational p
 
 ##########################################################
 
-arguments_strModel = 'default' # 'default', or 'kitti', or 'sintel'
-arguments_strOne = './images/one.png'
-arguments_strTwo = './images/two.png'
-arguments_strOut = './out.flo'
+args_strModel = 'default' # 'default', or 'kitti', or 'sintel'
+args_strOne = './images/one.png'
+args_strTwo = './images/two.png'
+args_strOut = './out.flo'
 
-for strOption, strArgument in getopt.getopt(sys.argv[1:], '', [ strParameter[2:] + '=' for strParameter in sys.argv[1::2] ])[0]:
-    if strOption == '--model' and strArgument != '': arguments_strModel = strArgument # which model to use
-    if strOption == '--one' and strArgument != '': arguments_strOne = strArgument # path to the first frame
-    if strOption == '--two' and strArgument != '': arguments_strTwo = strArgument # path to the second frame
-    if strOption == '--out' and strArgument != '': arguments_strOut = strArgument # path to where the output should be stored
+for strOption, strArg in getopt.getopt(sys.argv[1:], '', [
+    'model=',
+    'one=',
+    'two=',
+    'out=',
+])[0]:
+    if strOption == '--model' and strArg != '': args_strModel = strArg # which model to use
+    if strOption == '--one' and strArg != '': args_strOne = strArg # path to the first frame
+    if strOption == '--two' and strArg != '': args_strTwo = strArg # path to the second frame
+    if strOption == '--out' and strArg != '': args_strOut = strArg # path to where the output should be stored
 # end
 
 ##########################################################
@@ -292,7 +297,7 @@ class Network(torch.nn.Module):
         self.netSubpixel = torch.nn.ModuleList([ Subpixel(intLevel) for intLevel in [ 2, 3, 4, 5, 6 ] ])
         self.netRegularization = torch.nn.ModuleList([ Regularization(intLevel) for intLevel in [ 2, 3, 4, 5, 6 ] ])
 
-        self.load_state_dict({ strKey.replace('module', 'net'): tenWeight for strKey, tenWeight in torch.hub.load_state_dict_from_url(url='http://content.sniklaus.com/github/pytorch-liteflownet/network-' + arguments_strModel + '.pytorch', file_name='liteflownet-' + arguments_strModel).items() })
+        self.load_state_dict({ strKey.replace('module', 'net'): tenWeight for strKey, tenWeight in torch.hub.load_state_dict_from_url(url='http://content.sniklaus.com/github/pytorch-liteflownet/network-' + args_strModel + '.pytorch', file_name='liteflownet-' + args_strModel).items() })
     # end
 
     def forward(self, tenOne, tenTwo):
@@ -367,12 +372,12 @@ def estimate(tenOne, tenTwo):
 ##########################################################
 
 if __name__ == '__main__':
-    tenOne = torch.FloatTensor(numpy.ascontiguousarray(numpy.array(PIL.Image.open(arguments_strOne))[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32) * (1.0 / 255.0)))
-    tenTwo = torch.FloatTensor(numpy.ascontiguousarray(numpy.array(PIL.Image.open(arguments_strTwo))[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32) * (1.0 / 255.0)))
+    tenOne = torch.FloatTensor(numpy.ascontiguousarray(numpy.array(PIL.Image.open(args_strOne))[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32) * (1.0 / 255.0)))
+    tenTwo = torch.FloatTensor(numpy.ascontiguousarray(numpy.array(PIL.Image.open(args_strTwo))[:, :, ::-1].transpose(2, 0, 1).astype(numpy.float32) * (1.0 / 255.0)))
 
     tenOutput = estimate(tenOne, tenTwo)
 
-    objOutput = open(arguments_strOut, 'wb')
+    objOutput = open(args_strOut, 'wb')
 
     numpy.array([ 80, 73, 69, 72 ], numpy.uint8).tofile(objOutput)
     numpy.array([ tenOutput.shape[2], tenOutput.shape[1] ], numpy.int32).tofile(objOutput)
