@@ -1,7 +1,7 @@
 # pytorch-liteflownet
 This is a personal reimplementation of LiteFlowNet [1] using PyTorch. Should you be making use of this work, please cite the paper accordingly. Also, make sure to adhere to the <a href="https://github.com/twhui/LiteFlowNet#license-and-citation">licensing terms</a> of the authors. Should you be making use of this particular implementation, please acknowledge it appropriately [2].
 
-<a href="https://arxiv.org/abs/1805.07036" rel="Paper"><img src="http://www.arxiv-sanity.com/static/thumbs/1805.07036v1.pdf.jpg" alt="Paper" width="100%"></a>
+<a href="https://arxiv.org/abs/1805.07036"><img src="http://www.arxiv-sanity.com/static/thumbs/1805.07036v1.pdf.jpg" alt="Paper" width="100%"></a>
 
 For the original Caffe version of this work, please see: https://github.com/twhui/LiteFlowNet
 <br />
